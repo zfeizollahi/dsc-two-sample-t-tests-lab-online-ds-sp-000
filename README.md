@@ -64,7 +64,14 @@ It is always a good idea to create a plot of the probability distributions for s
 
 ```python
 # Create a plot showing overlapping of distribution means and sds for inspection
+plt.figure(figsize=(16,6))
+sns.distplot(control)
+sns.distplot(experimental);
 ```
+
+
+![png](index_files/index_4_0.png)
+
 
 There are some slight differences between the mean and standard deviation of the control and experimental groups. This is a good sign to further our experimentation and to calculate whether the difference is significant, or not. As a reminder the five steps to performing a hypothesis test are:
 
@@ -97,7 +104,15 @@ Now, calculate the mean difference between both groups.
 
 ```python
 # -9.819999999999993
+experimental.mean() - control.mean()
 ```
+
+
+
+
+    -9.819999999999993
+
+
 
 What is the probability that you would observe this data GIVEN a specified mean difference in blood pressure?
 
@@ -126,8 +141,9 @@ Now, create some functions to calculate the t-statistic. The first function to c
 
 ```python
 def sample_variance(sample):
-    
-    return None
+    mean = sample.mean()
+    s_x = np.sum((sample - mean)**2) / (len(sample) - 1)
+    return s_x
 ```
 
 Using `sample_variance`, you can now write another function `pooled_variance` to calculate $s_{p}^{2}$
@@ -135,8 +151,12 @@ Using `sample_variance`, you can now write another function `pooled_variance` to
 
 ```python
 def pooled_variance(sample1, sample2):
-    
-    return None
+    s1 = sample_variance(sample1)
+    s2 = sample_variance(sample2)
+    n1 = len(sample1)
+    n2 = len(sample2)  
+    s2_p = (((n1-1) * s1) + ((n2-1) * s2)) / (n1 + n2 - 2)
+    return s2_p
 ```
 
 Now that you have $s_{p}^{2}$, create a function `twosample_tstatistic` to calculate the two sample t-statistic using the formula given earlier. 
@@ -144,12 +164,19 @@ Now that you have $s_{p}^{2}$, create a function `twosample_tstatistic` to calcu
 
 ```python
 def twosample_tstatistic(expr, ctrl):
+    s2_p = pooled_variance(expr, ctrl)
+    n1 = len(expr)
+    n2 = len(ctrl)
+    two_ttest = (expr.mean() - ctrl.mean()) / (np.sqrt(s2_p * ( (1/n1) + (1/n2))) ) 
+    return two_ttest
 
-    return None
-
-t_stat = None
+t_stat = twosample_tstatistic(experimental, control)
 # -1.8915462966190268
+print(t_stat)
 ```
+
+    -1.8915462966190273
+
 
 Using the data from the samples, you can now determine the critical values with the t-statistic and calculate the area under the curve to determine the p-value. 
 
@@ -162,19 +189,41 @@ Write a function `visualize_t` that uses matplotlib to display a standard t-dist
 def visualize_t(t_stat, n_control, n_experimental):
 
     # initialize a matplotlib "figure"
-
+    fig = plt.figure(figsize=(16,6))
     # generate points on the x axis between -4 and 4:
- 
+    xaxis = np.linspace(-4, 4, 100)
     # use stats.t.pdf to get values on the probability density function for the t-distribution
-    
+    yaxis = stats.t.pdf(xaxis, len(n_control) + len(n_experimental) - 2)
     # Draw two sided boundary for critical-t
-
+    critical_t_upper = stats.t.ppf(1-0.025, len(n_control) + len(n_experimental) - 2, 0, 1)
+    critical_t_lower = stats.t.ppf(1-0.975, len(n_control) + len(n_experimental) - 2, 0, 1)
+    ax = fig.gca()
+    
+    ax.plot(xaxis, yaxis, linewidth=3, color='darkblue')
+    ax.axvline(critical_t_upper, color='red', linestyle='--', lw=5,label='t-statistic')
+    ax.axvline(critical_t_lower, color='red', linestyle='--', lw=5,label='t-statistic')
     return None
 
-n_control = None
-n_experimental = None
+n_control = control
+n_experimental = experimental
 visualize_t(t_stat, n_control, n_experimental)
 ```
+
+
+![png](index_files/index_14_0.png)
+
+
+
+```python
+len(control)
+```
+
+
+
+
+    50
+
+
 
 Now that you have defined your boundaries for significance, you can simply calculate the p-value by calculating the total area under curve using `stats.t.cdf()`. 
 
@@ -192,6 +241,9 @@ p_value = lower_tail+upper_tail
 print(p_value)
 ```
 
+    0.061713104303855494
+
+
 To verify these results, you can use SciPy's functions to calculate the p_value in a one liner. 
 
 
@@ -207,6 +259,13 @@ populations have identical variances by default.
 
 stats.ttest_ind(experimental, control)
 ```
+
+
+
+
+    Ttest_indResult(statistic=-1.8915462966190273, pvalue=0.061504240672530394)
+
+
 
 ## Summary
 In this lesson, you ran hypothesis testing using frequentists methods with t-values and p-values. You saw how a two sample t-test can be applied to contexts where the population and sample mean are known and you have a limited amount of sample data. You looked at all the stages required for such hypothesis testing with a description of the steps and also how to perform these functions in python. You also used built-in SciPy functions to calculate test statistics and p-value as a way to verify the manual calculations performed. 
