@@ -233,7 +233,7 @@ Given a t-value and the degrees of freedom, you can use the "survival function",
 ```python
 ## Calculate p_value
 # Lower tail comulative density function returns area under the lower tail curve
-lower_tail = stats.t.cdf(-1.89, (50+50-2), 0, 1)
+lower_tail = stats.t.cdf(-1.89, (50+50-2), 0, 1.)
 # Upper tail comulative density function returns area under upper tail curve
 upper_tail = 1. - stats.t.cdf(1.89, (50+50-2), 0, 1)
 
